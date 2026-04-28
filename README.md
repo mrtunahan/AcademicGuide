@@ -22,6 +22,9 @@ Akıllı 2209-Mentor Portalı — TÜBİTAK 2209-A/B başvurularında öğrenci 
 - 🔐 JWT tabanlı kayıt / giriş, rol bazlı erişim (`student`, `advisor`)
 - 📄 PDF / TXT döküman yükleme → ChromaDB'ye otomatik ingest
 - 🧠 RAG `query` + bölüm bazlı `analysis/review` (5 TÜBİTAK kriteri)
+- 🌐 Yerel **BGE-M3** çok-dilli embedding (Türkçe dahil 100+ dil, dış API'siz)
+- ✍️ Akademik dil linter'ı (pasif yapı, 1. şahıs, gayri-resmi ton, tekrar)
+- 💬 Yorumlar + danışman→öğrenci için **SSE canlı bildirim**
 - 📊 Öğrenci proje listesi + revizyon geçmişi (PostgreSQL)
 - 🗂️ Danışman Kanban (`draft → review → approved`) — gerçek API'ye bağlı
 
@@ -51,7 +54,13 @@ Servisler:
 1. Bir öğrenci hesabı açın → proje oluşturup taslak metin gönderin.
 2. Bir danışman hesabı açın → Kanban üzerinde projelerin durumunu yönetin.
 
-> Not: `/api/analysis/review` ve `/api/rag/query` çağrıları için `.env`'de geçerli bir `OPENAI_API_KEY` olmalı. Aksi durumda 500 dönecektir.
+> Not: LLM çağrıları (review, query, lint) için `.env`'de geçerli bir `OPENAI_API_KEY` olmalı. **Embedding** tarafı varsayılan olarak BGE-M3 ile yerelde çalışır, internet bağlantısı yalnızca ilk model indirmesinde gerekir (~2.3 GB).
+>
+> İsterseniz embedding'i de OpenAI'a çevirebilirsiniz: `.env`'de
+> ```
+> EMBEDDING_PROVIDER=openai
+> EMBEDDING_MODEL=text-embedding-3-small
+> ```
 
 ## Yerel Geliştirme (Docker'sız)
 
@@ -61,6 +70,10 @@ Servisler:
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
+
+# CPU-only torch wheel (BGE-M3 için)
+pip install --extra-index-url https://download.pytorch.org/whl/cpu \
+  torch==2.5.1
 pip install -r requirements.txt
 
 # Postgres + Chroma için yine docker compose'u kullanmak en kolayı:
@@ -111,6 +124,9 @@ Detaylar için bkz. [`docs/api.md`](docs/api.md).
 | Backend `connection refused` Chroma        | İlk açılışta Chroma yavaş başlar → 5–10 sn bekleyin / yeniden deneyin |
 | Migration "table already exists"           | `docker compose down -v` ile volume'ları temizleyin                  |
 | `OPENAI_API_KEY` boş → 500                 | `.env`'e geçerli anahtar koyup container'ı yeniden başlatın          |
+| İlk ingest çok yavaş                       | İlk çağrıda BGE-M3 (~2.3 GB) indirilir; `hf_cache` volume'u sayesinde sonrakiler anlık |
+| BGE-M3 belleği aşıyor                      | `.env`'de `EMBEDDING_PROVIDER=openai` veya küçük bir alternatif (`intfloat/multilingual-e5-small`) deneyin |
+| GPU kullanmak                              | `.env`'de `EMBEDDING_DEVICE=cuda`; Dockerfile'ı CUDA torch wheel ile yeniden build edin (`TORCH_INDEX_URL`) |
 
 ## Yol Haritası
 İş paketleri için bkz. [`docs/work-packages.md`](docs/work-packages.md).

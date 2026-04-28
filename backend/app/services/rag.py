@@ -4,7 +4,8 @@ from typing import Any
 import chromadb
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.embeddings import Embeddings
+from langchain_openai import ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import Settings, get_settings
@@ -15,14 +16,36 @@ Sana verilen bağlamı kullanarak öğrencinin sorusunu Türkçe yanıtla.
 Bağlam yetersizse bunu açıkça belirt; uydurma."""
 
 
+def _build_embeddings(settings: Settings) -> Embeddings:
+    provider = settings.embedding_provider.lower()
+    if provider == "openai":
+        from langchain_openai import OpenAIEmbeddings
+
+        return OpenAIEmbeddings(
+            model=settings.embedding_model,
+            api_key=settings.openai_api_key,
+        )
+    if provider == "huggingface":
+        # Imported lazily so OpenAI-only deployments don't pay the torch import cost.
+        from langchain_huggingface import HuggingFaceEmbeddings
+
+        return HuggingFaceEmbeddings(
+            model_name=settings.embedding_model,
+            cache_folder=settings.hf_cache_dir,
+            model_kwargs={"device": settings.embedding_device},
+            encode_kwargs={"normalize_embeddings": settings.embedding_normalize},
+        )
+    raise ValueError(
+        f"Bilinmeyen EMBEDDING_PROVIDER: {settings.embedding_provider!r}. "
+        "Geçerli değerler: 'huggingface', 'openai'."
+    )
+
+
 class RAGService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.collection_name = settings.chroma_collection
-        self._embeddings = OpenAIEmbeddings(
-            model=settings.embedding_model,
-            api_key=settings.openai_api_key,
-        )
+        self._embeddings = _build_embeddings(settings)
         self._client = chromadb.HttpClient(
             host=settings.chroma_host,
             port=settings.chroma_port,

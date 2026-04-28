@@ -14,10 +14,18 @@ bcrypt==4.0.1
 langchain==0.3.10
 langchain-community==0.3.10
 langchain-openai==0.2.11
+langchain-huggingface==0.1.2
 langchain-chroma==0.1.4
 langchain-text-splitters==0.3.2
 chromadb==0.5.20
 tiktoken==0.8.0
+
+# Embeddings (BGE-M3)
+sentence-transformers==3.3.1
+# Torch CPU build is large; pin a CPU-friendly version. For GPU, install
+# the matching CUDA wheel manually.
+torch==2.5.1
+einops==0.8.0
 
 # Document loaders
 pypdf==5.1.0

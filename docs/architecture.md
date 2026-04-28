@@ -5,7 +5,10 @@
 ### 1. Veri ve Bilgi Tabanı (RAG Engine)
 - **Bilgi Kaynağı:** TÜBİTAK 2209 çağrı rehberleri, form şablonları, etik kurul yönergeleri, anonimleştirilmiş başarılı proje örnekleri.
 - **Vektör DB:** ChromaDB (varsayılan), gerekirse Pinecone'a taşınabilir.
-- **Embedding:** `text-embedding-3-small` (OpenAI) — alternatif olarak `BAAI/bge-m3` (HuggingFace).
+- **Embedding:** `BAAI/bge-m3` (HuggingFace, varsayılan) — Türkçe dahil 100+ dilde yüksek kaliteli, 1024 boyutlu çok-dilli embedding modeli. Yerel olarak çalışır, dış API çağrısı yapmaz.
+  - Alternatif: `EMBEDDING_PROVIDER=openai` ile `text-embedding-3-small` (API maliyeti var, daha hızlı cold start).
+  - Donanım: CPU'da çalışır (~1-3 sn / chunk); GPU varsa `EMBEDDING_DEVICE=cuda` ile 10-50x hızlanır.
+  - Model boyutu ~2.3 GB, ilk indirme `hf_cache` named volume'una düşer; sonraki başlatmalar anlık.
 - **Chunking:** `RecursiveCharacterTextSplitter` (chunk=800, overlap=120).
 
 ### 2. Analiz ve Mentorluk Modülü (AI Agent)

@@ -39,6 +39,8 @@ services:
       CHROMA_PORT: 8000
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
+      HF_HOME: /app/data/hf
+      TRANSFORMERS_CACHE: /app/data/hf
     ports:
       - "8000:8000"
     depends_on:
@@ -49,6 +51,7 @@ services:
     volumes:
       - ./backend:/app
       - backend_data:/app/data
+      - hf_cache:/app/data/hf
 
   frontend:
     build:
@@ -70,3 +73,4 @@ volumes:
   postgres_data:
   chroma_data:
   backend_data:
+  hf_cache:
