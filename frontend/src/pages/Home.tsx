@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
 
+import { useAuth } from "../lib/auth";
+
 export default function Home() {
+  const { user } = useAuth();
+
   return (
     <div className="space-y-8">
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
@@ -13,18 +17,38 @@ export default function Home() {
           dashboard üzerinden yönetir.
         </p>
         <div className="mt-6 flex gap-3">
-          <Link
-            to="/student"
-            className="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
-          >
-            Öğrenci Paneli
-          </Link>
-          <Link
-            to="/advisor"
-            className="px-4 py-2 rounded-md bg-slate-100 text-slate-800 text-sm font-medium hover:bg-slate-200"
-          >
-            Danışman Paneli
-          </Link>
+          {!user && (
+            <>
+              <Link
+                to="/register"
+                className="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+              >
+                Hemen Kayıt Ol
+              </Link>
+              <Link
+                to="/login"
+                className="px-4 py-2 rounded-md bg-slate-100 text-slate-800 text-sm font-medium hover:bg-slate-200"
+              >
+                Giriş Yap
+              </Link>
+            </>
+          )}
+          {user?.role === "student" && (
+            <Link
+              to="/projects"
+              className="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+            >
+              Projelerime Git
+            </Link>
+          )}
+          {user?.role === "advisor" && (
+            <Link
+              to="/advisor"
+              className="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+            >
+              Danışman Paneline Git
+            </Link>
+          )}
         </div>
       </section>
 

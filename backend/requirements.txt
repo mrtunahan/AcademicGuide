@@ -1,21 +1,26 @@
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
-pydantic==2.10.3
+pydantic[email]==2.10.3
 pydantic-settings==2.6.1
 python-multipart==0.0.18
 httpx==0.28.1
+
+# Auth
+pyjwt==2.10.1
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 
 # LLM / RAG
 langchain==0.3.10
 langchain-community==0.3.10
 langchain-openai==0.2.11
 langchain-chroma==0.1.4
+langchain-text-splitters==0.3.2
 chromadb==0.5.20
 tiktoken==0.8.0
 
 # Document loaders
 pypdf==5.1.0
-unstructured==0.16.11
 
 # DB
 sqlalchemy==2.0.36
