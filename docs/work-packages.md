@@ -4,7 +4,7 @@
 - TÜBİTAK 2209 dokümanlarının derlenmesi
 - Vektör veritabanına ingest edilmesi (`/api/rag/ingest`)
 - Prompt mühendisliği stratejilerinin belirlenmesi
-- **Çıktı:** Doldurulmuş ChromaDB koleksiyonu, `prompts/` rehberi.
+- **Çıktı:** pgvector koleksiyonu (`tubitak_2209`), `prompts/` rehberi.
 
 ## İP2 — AI Analiz Motoru (3–5. Ay)
 - RAG boru hattının kurulması (✅ iskeleti hazır)
