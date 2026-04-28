@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,7 @@ class SectionType(str, Enum):
 class ReviewRequest(BaseModel):
     section: SectionType
     text: str = Field(..., min_length=20)
+    project_id: int | None = None
 
 
 class Finding(BaseModel):
@@ -28,3 +30,14 @@ class ReviewResponse(BaseModel):
     summary: str
     findings: list[Finding]
     citations: list[str] = Field(default_factory=list)
+
+
+class ReviewHistoryItem(BaseModel):
+    id: int
+    section: SectionType
+    score: int
+    summary: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
