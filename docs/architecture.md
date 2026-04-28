@@ -18,6 +18,7 @@
 - **Semantik Denetleyici:** `Özgün Değer` metnini retrieval ile literatüre göre puanlar.
 - **Kriter Bazlı Değerlendirme:** Bölüm bazında JSON çıktı üreten LLM çağrısı (`/api/analysis/review`).
 - **Akademik Dil Düzeltici:** Pasif yapı, 1. şahıs, gayri-resmi ton, tekrar ve belirsizlik için `/api/analysis/lint`.
+- **LLM:** Yerel **Ollama** (`qwen2.5:7b-instruct`, varsayılan). `LLM_PROVIDER=openai` ile bulut LLM'e geçilebilir. `app/services/llm.py` içindeki `build_llm()` fabrikası iki provider arasındaki seçimi yönetir; lazy import sayesinde kullanılmayan stack'in import maliyeti yoktur.
 
 ### 3. Uygulama ve Arayüz
 - **Öğrenci Paneli:** Bölüm seçimi + metin gönderimi + skor & findings görüntüleme; PDF/TXT yükleme; SSE bildirimleri.
@@ -27,20 +28,21 @@
 
 ```
 React (Vite) ──HTTP──> FastAPI ──> PostgreSQL + pgvector (psycopg)
-                            └──> OpenAI / HuggingFace (LLM + embedding)
+                            ├──> Ollama (yerel LLM, HTTP)
+                            └──> HuggingFace (BGE-M3 embedding, in-process)
 ```
 
 ## Teknoloji Yığını
 
-| Bileşen        | Seçim                                |
-| :------------- | :----------------------------------- |
-| Backend        | Python / FastAPI                     |
-| Frontend       | React + Tailwind                     |
-| Orchestration  | LangChain (`langchain-postgres`)     |
-| RDBMS + Vector | PostgreSQL 16 + pgvector             |
-| Embedding      | BAAI/bge-m3 (HF) veya OpenAI         |
-| LLM            | OpenAI gpt-4o-mini (varsayılan)      |
-| Container      | Docker Compose                       |
+| Bileşen        | Seçim                                  |
+| :------------- | :------------------------------------- |
+| Backend        | Python 3.11 / FastAPI                  |
+| Frontend       | React 18 + Tailwind (Vite)             |
+| Orchestration  | LangChain (`langchain-postgres`)       |
+| RDBMS + Vector | PostgreSQL 16 + pgvector               |
+| Embedding      | BAAI/bge-m3 (HF) veya OpenAI           |
+| LLM            | Ollama (qwen2.5:7b-instruct) veya OpenAI |
+| Geliştirme     | Yerel — Docker yok                     |
 
 ## Tek veri katmanına geçişin neden faydası var?
 

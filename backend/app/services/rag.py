@@ -3,12 +3,12 @@ from typing import Any
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_openai import ChatOpenAI
 from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import Settings, get_settings
 from app.schemas.rag import DocumentInput
+from app.services.llm import build_llm
 
 SYSTEM_PROMPT = """Sen TÜBİTAK 2209 başvurularını analiz eden bir akademik mentörsün.
 Sana verilen bağlamı kullanarak öğrencinin sorusunu Türkçe yanıtla.
@@ -56,11 +56,7 @@ class RAGService:
             chunk_size=800,
             chunk_overlap=120,
         )
-        self._llm = ChatOpenAI(
-            model=settings.llm_model,
-            api_key=settings.openai_api_key,
-            temperature=0.2,
-        )
+        self._llm = build_llm(settings)
 
     def ingest(self, documents: list[DocumentInput]) -> int:
         lc_docs: list[Document] = []

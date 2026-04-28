@@ -15,15 +15,24 @@ class Settings(BaseSettings):
     # pgvector collection name (logical namespace inside langchain_pg_collection)
     vector_collection: str = "tubitak_2209"
 
+    # LLM provider: "ollama" (default, fully local) or "openai".
+    llm_provider: str = "ollama"
+    llm_temperature: float = 0.2
+
+    # Ollama
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5:7b-instruct"
+
+    # OpenAI (only used when llm_provider == "openai" and/or embedding_provider == "openai")
     openai_api_key: str | None = None
-    llm_model: str = "gpt-4o-mini"
+    openai_model: str = "gpt-4o-mini"
 
     # Embedding provider: "huggingface" (default, uses local BGE-M3) or "openai".
     embedding_provider: str = "huggingface"
     embedding_model: str = "BAAI/bge-m3"
     embedding_device: str = "cpu"  # "cpu" or "cuda" / "cuda:0"
     embedding_normalize: bool = True
-    hf_cache_dir: str = "/app/data/hf"
+    hf_cache_dir: str = "./data/hf"
 
     cors_origins: str = "http://localhost:5173"
 

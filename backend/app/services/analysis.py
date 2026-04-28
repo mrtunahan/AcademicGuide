@@ -2,10 +2,9 @@ import json
 from functools import lru_cache
 from typing import Any
 
-from langchain_openai import ChatOpenAI
-
 from app.config import Settings, get_settings
 from app.schemas.analysis import SectionType
+from app.services.llm import build_llm
 from app.services.rag import RAGService, get_rag_service
 
 LINT_PROMPT = """Sen akademik dil ve TÜBİTAK 2209 yazım standartlarına hâkim
@@ -81,11 +80,7 @@ class AnalysisService:
     def __init__(self, settings: Settings, rag: RAGService) -> None:
         self.settings = settings
         self.rag = rag
-        self._llm = ChatOpenAI(
-            model=settings.llm_model,
-            api_key=settings.openai_api_key,
-            temperature=0.1,
-        )
+        self._llm = build_llm(settings)
 
     def review(self, section: SectionType, text: str) -> dict[str, Any]:
         rubric = SECTION_RUBRICS[section]
