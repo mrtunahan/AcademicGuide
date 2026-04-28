@@ -8,6 +8,32 @@ from app.config import Settings, get_settings
 from app.schemas.analysis import SectionType
 from app.services.rag import RAGService, get_rag_service
 
+LINT_PROMPT = """Sen akademik dil ve TÜBİTAK 2209 yazım standartlarına hâkim
+bir Türkçe akademik editörsün. Aşağıdaki metni şu kriterlere göre incele:
+- Pasif yapı kullanımı (Türkçe akademik metinler genellikle pasif/-ndik formu tercih eder)
+- 1. tekil/çoğul şahıs kullanımı (objektifliği zedeleyen "ben/biz")
+- Resmi olmayan / konuşma dili
+- Gereksiz tekrar
+- Belirsizlik
+
+Yanıtını SADECE şu JSON şemasında döndür:
+{{
+  "issues": [
+    {{
+      "type": "passive_voice|first_person|informal_tone|redundancy|ambiguity",
+      "original": "<orijinal cümle/ifade>",
+      "suggestion": "<önerilen yeniden yazım>",
+      "explanation": "<kısa gerekçe>"
+    }}
+  ],
+  "rewritten": "<metnin akademik üsluba uygun tam yeniden yazımı>"
+}}
+
+# Metin
+{text}
+"""
+
+
 SECTION_RUBRICS: dict[SectionType, str] = {
     SectionType.ozgun_deger: (
         "Özgünlük, literatürle farklılaşma, problemin akademik katkısı."
@@ -84,6 +110,16 @@ class AnalysisService:
             "summary": parsed.get("summary", ""),
             "findings": parsed.get("findings", []),
             "citations": citations,
+        }
+
+    def lint(self, text: str) -> dict[str, Any]:
+        prompt = LINT_PROMPT.format(text=text)
+        response = self._llm.invoke(prompt)
+        raw = response.content if hasattr(response, "content") else str(response)
+        parsed = _safe_json(raw)
+        return {
+            "issues": parsed.get("issues", []),
+            "rewritten": parsed.get("rewritten", ""),
         }
 
 

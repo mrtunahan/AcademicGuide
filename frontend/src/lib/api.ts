@@ -60,6 +60,34 @@ export interface DocumentItem {
   created_at: string;
 }
 
+export interface Comment {
+  id: number;
+  project_id: number;
+  author_id: number;
+  author_name: string;
+  body: string;
+  created_at: string;
+}
+
+export type LintIssueType =
+  | "passive_voice"
+  | "first_person"
+  | "informal_tone"
+  | "redundancy"
+  | "ambiguity";
+
+export interface LintIssue {
+  type: LintIssueType;
+  original: string;
+  suggestion: string;
+  explanation?: string;
+}
+
+export interface LintResult {
+  issues: LintIssue[];
+  rewritten: string;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem(TOKEN_KEY);
   const headers = new Headers(init.headers);
@@ -144,9 +172,29 @@ export const listDocuments = (projectId?: number) => {
   return request<DocumentItem[]>(`/api/documents${qs}`);
 };
 
+export const lintText = (text: string) =>
+  request<LintResult>("/api/analysis/lint", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+
+// Comments
+export const listComments = (projectId: number) =>
+  request<Comment[]>(`/api/projects/${projectId}/comments`);
+export const addComment = (projectId: number, body: string) =>
+  request<Comment>(`/api/projects/${projectId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+
 // RAG
 export const queryRag = (question: string, top_k = 4) =>
   request<{ answer: string; chunks: { content: string; source: string }[] }>(
     "/api/rag/query",
     { method: "POST", body: JSON.stringify({ question, top_k }) },
   );
+
+// Notifications (SSE)
+export function notificationStreamUrl(token: string): string {
+  return `${API_BASE}/api/notifications/stream?token=${encodeURIComponent(token)}`;
+}

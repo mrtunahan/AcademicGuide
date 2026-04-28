@@ -2,15 +2,17 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import (
+    JSON,
     DateTime,
-    Enum as SAEnum,
     ForeignKey,
     Integer,
     String,
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import (
+    Enum as SAEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -95,8 +97,8 @@ class Review(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    findings: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
-    citations: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    findings: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+    citations: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -118,3 +120,22 @@ class Document(Base):
     )
 
     project: Mapped[Project | None] = relationship(back_populates="documents")
+
+
+class Comment(Base):
+    __tablename__ = "comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    author_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    project: Mapped[Project] = relationship()
+    author: Mapped[User] = relationship()

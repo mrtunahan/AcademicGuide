@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 
+import NotificationBell from "./components/NotificationBell";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdvisorDashboard from "./pages/AdvisorDashboard";
 import Home from "./pages/Home";
@@ -44,6 +45,7 @@ export default function App() {
             )}
             {user ? (
               <>
+                <NotificationBell />
                 <span className="text-xs text-slate-500 ml-2">{user.full_name}</span>
                 <button
                   onClick={logout}

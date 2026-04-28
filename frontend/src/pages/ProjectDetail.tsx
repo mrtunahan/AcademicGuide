@@ -1,11 +1,14 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useParams } from "react-router-dom";
 
+import Comments from "../components/Comments";
 import {
+  lintText,
   listDocuments,
   reviewSection,
   uploadDocument,
   type DocumentItem,
+  type LintResult,
   type ReviewResponse,
   type Section,
 } from "../lib/api";
@@ -24,6 +27,14 @@ const severityClass: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
 };
 
+const lintTypeLabel: Record<string, string> = {
+  passive_voice: "Pasif yapı",
+  first_person: "1. şahıs",
+  informal_tone: "Resmi olmayan",
+  redundancy: "Tekrar",
+  ambiguity: "Belirsizlik",
+};
+
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
@@ -34,6 +45,10 @@ export default function ProjectDetail() {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [result, setResult] = useState<ReviewResponse | null>(null);
 
+  const [lintLoading, setLintLoading] = useState(false);
+  const [lintResult, setLintResult] = useState<LintResult | null>(null);
+  const [lintError, setLintError] = useState<string | null>(null);
+
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -42,7 +57,7 @@ export default function ProjectDetail() {
     listDocuments(projectId).then(setDocuments).catch(() => undefined);
   }, [projectId]);
 
-  const submit = async () => {
+  const submitReview = async () => {
     setReviewLoading(true);
     setReviewError(null);
     setResult(null);
@@ -53,6 +68,20 @@ export default function ProjectDetail() {
       setReviewError(e instanceof Error ? e.message : "Hata");
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+  const submitLint = async () => {
+    setLintLoading(true);
+    setLintError(null);
+    setLintResult(null);
+    try {
+      const res = await lintText(text);
+      setLintResult(res);
+    } catch (e) {
+      setLintError(e instanceof Error ? e.message : "Hata");
+    } finally {
+      setLintLoading(false);
     }
   };
 
@@ -92,6 +121,7 @@ export default function ProjectDetail() {
 
         <label className="block mt-4 text-sm font-medium text-slate-700">Metin</label>
         <textarea
+          data-testid="section-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={10}
@@ -99,19 +129,29 @@ export default function ProjectDetail() {
           placeholder="Bölüm metni..."
         />
 
-        <button
-          onClick={submit}
-          disabled={reviewLoading || text.trim().length < 20}
-          className="mt-4 px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:bg-slate-300"
-        >
-          {reviewLoading ? "Analiz ediliyor..." : "Analiz Et"}
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={submitReview}
+            disabled={reviewLoading || text.trim().length < 20}
+            className="px-4 py-2 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:bg-slate-300"
+          >
+            {reviewLoading ? "Analiz ediliyor..." : "Kriter Analizi"}
+          </button>
+          <button
+            onClick={submitLint}
+            disabled={lintLoading || text.trim().length < 20}
+            className="px-4 py-2 rounded-md bg-slate-100 text-slate-800 text-sm font-medium hover:bg-slate-200 disabled:bg-slate-50"
+          >
+            {lintLoading ? "Dil kontrolü..." : "Akademik Dil Kontrolü"}
+          </button>
+        </div>
         {reviewError && <p className="mt-3 text-sm text-red-600">{reviewError}</p>}
+        {lintError && <p className="mt-3 text-sm text-red-600">{lintError}</p>}
       </section>
 
       <section className="space-y-6">
         <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-xl font-semibold text-slate-900">Geri Bildirim</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Kriter Geri Bildirimi</h2>
           {!result && (
             <p className="text-sm text-slate-500 mt-1">Henüz analiz yapılmadı.</p>
           )}
@@ -143,6 +183,42 @@ export default function ProjectDetail() {
           )}
         </div>
 
+        {lintResult && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <h3 className="font-semibold text-slate-900">Akademik Dil Önerileri</h3>
+            {lintResult.issues.length === 0 ? (
+              <p className="text-sm text-emerald-700 mt-2">
+                Önemli bir dil hatası bulunmadı.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {lintResult.issues.map((i, idx) => (
+                  <li key={idx} className="border border-slate-200 rounded-md p-3 text-sm">
+                    <span className="inline-block text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                      {lintTypeLabel[i.type] ?? i.type}
+                    </span>
+                    <p className="mt-2 text-slate-700 line-through">{i.original}</p>
+                    <p className="text-slate-900">{i.suggestion}</p>
+                    {i.explanation && (
+                      <p className="text-xs text-slate-500 mt-1">{i.explanation}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {lintResult.rewritten && (
+              <details className="mt-4">
+                <summary className="text-sm text-brand-600 cursor-pointer">
+                  Yeniden yazılmış metni göster
+                </summary>
+                <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">
+                  {lintResult.rewritten}
+                </p>
+              </details>
+            )}
+          </div>
+        )}
+
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h3 className="font-semibold text-slate-900">Dökümanlar</h3>
           <p className="text-xs text-slate-500 mt-1">
@@ -155,23 +231,24 @@ export default function ProjectDetail() {
             disabled={uploading}
             className="mt-3 block w-full text-sm"
           />
-          {uploadError && (
-            <p className="mt-2 text-sm text-red-600">{uploadError}</p>
-          )}
+          {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
           <ul className="mt-4 space-y-2 text-sm">
             {documents.length === 0 && (
               <li className="text-slate-500">Henüz döküman yok.</li>
             )}
             {documents.map((d) => (
-              <li key={d.id} className="flex justify-between border-b border-slate-100 pb-1">
+              <li
+                key={d.id}
+                className="flex justify-between border-b border-slate-100 pb-1"
+              >
                 <span className="text-slate-700">{d.source}</span>
-                <span className="text-xs text-slate-500">
-                  {d.chunks_added} chunk
-                </span>
+                <span className="text-xs text-slate-500">{d.chunks_added} chunk</span>
               </li>
             ))}
           </ul>
         </div>
+
+        <Comments projectId={projectId} />
       </section>
     </div>
   );
