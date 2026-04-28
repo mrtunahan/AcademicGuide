@@ -18,7 +18,13 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = None
     llm_model: str = "gpt-4o-mini"
-    embedding_model: str = "text-embedding-3-small"
+
+    # Embedding provider: "huggingface" (default, uses local BGE-M3) or "openai".
+    embedding_provider: str = "huggingface"
+    embedding_model: str = "BAAI/bge-m3"
+    embedding_device: str = "cpu"  # "cpu" or "cuda" / "cuda:0"
+    embedding_normalize: bool = True
+    hf_cache_dir: str = "/app/data/hf"
 
     cors_origins: str = "http://localhost:5173"
 
