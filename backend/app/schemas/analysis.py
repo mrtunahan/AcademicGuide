@@ -41,3 +41,27 @@ class ReviewHistoryItem(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class LintIssueType(str, Enum):
+    passive_voice = "passive_voice"
+    first_person = "first_person"
+    informal_tone = "informal_tone"
+    redundancy = "redundancy"
+    ambiguity = "ambiguity"
+
+
+class LintRequest(BaseModel):
+    text: str = Field(..., min_length=20, max_length=20000)
+
+
+class LintIssue(BaseModel):
+    type: LintIssueType
+    original: str
+    suggestion: str
+    explanation: str | None = None
+
+
+class LintResponse(BaseModel):
+    issues: list[LintIssue]
+    rewritten: str
