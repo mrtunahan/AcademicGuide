@@ -5,14 +5,13 @@ Akıllı 2209-Mentor Portalı — TÜBİTAK 2209-A/B başvurularında öğrenci 
 ## Mimari Özet
 
 ```
-┌──────────────┐      ┌──────────────────┐      ┌────────────────────────┐
-│  React +     │ ───► │  FastAPI         │ ───► │  PostgreSQL + pgvector │
-│  Tailwind    │      │  (RAG Engine)    │      │  (ilişkisel + vektör)  │
-│  (Vite)      │ ◄─── │  LangChain       │ ◄──► │                        │
-└──────────────┘      └──────────────────┘      └────────────────────────┘
+┌──────────────┐      ┌──────────────────┐      ┌──────────────┐
+│  React +     │ ───► │  FastAPI         │ ───► │  PostgreSQL  │
+│  Tailwind    │      │  (RAG Engine)    │      └──────────────┘
+│  (Vite)      │ ◄─── │  LangChain       │ ◄──► ┌──────────────┐
+└──────────────┘      └──────────────────┘      │  ChromaDB    │
+                                                 └──────────────┘
 ```
-
-Tek bir Postgres instance hem ilişkisel veriyi (kullanıcı, proje, yorum, döküman) hem de embedding vektörlerini (`vector` extension'ı ile) barındırır.
 
 - **backend/** — FastAPI uygulaması, JWT auth, RAG boru hattı, PDF döküman ingest.
 - **frontend/** — React + Tailwind (Vite), öğrenci ve danışman panelleri.
@@ -21,9 +20,8 @@ Tek bir Postgres instance hem ilişkisel veriyi (kullanıcı, proje, yorum, dök
 ## Özellikler
 
 - 🔐 JWT tabanlı kayıt / giriş, rol bazlı erişim (`student`, `advisor`)
-- 📄 PDF / TXT döküman yükleme → pgvector'a otomatik ingest
+- 📄 PDF / TXT döküman yükleme → ChromaDB'ye otomatik ingest
 - 🧠 RAG `query` + bölüm bazlı `analysis/review` (5 TÜBİTAK kriteri)
-- 🗄️ Tek veri katmanı: PostgreSQL + pgvector (Chroma yok)
 - 🌐 Yerel **BGE-M3** çok-dilli embedding (Türkçe dahil 100+ dil, dış API'siz)
 - ✍️ Akademik dil linter'ı (pasif yapı, 1. şahıs, gayri-resmi ton, tekrar)
 - 💬 Yorumlar + danışman→öğrenci için **SSE canlı bildirim**
@@ -47,7 +45,8 @@ docker compose up --build
 Servisler:
 - Frontend: <http://localhost:5173>
 - Backend API + Swagger: <http://localhost:8000/docs>
-- PostgreSQL + pgvector: `localhost:5432` (kullanıcı `academicguide`)
+- PostgreSQL: `localhost:5432` (kullanıcı `academicguide`)
+- ChromaDB: <http://localhost:8001>
 
 ### Hesap Oluşturma
 
@@ -77,8 +76,8 @@ pip install --extra-index-url https://download.pytorch.org/whl/cpu \
   torch==2.5.1
 pip install -r requirements.txt
 
-# Postgres (pgvector image) için docker compose'u kullanmak en kolayı:
-docker compose up postgres -d
+# Postgres + Chroma için yine docker compose'u kullanmak en kolayı:
+docker compose up postgres chroma -d
 
 # Migration:
 export $(grep -v '^#' ../.env | xargs)   # .env'i yükle
@@ -122,13 +121,12 @@ Detaylar için bkz. [`docs/api.md`](docs/api.md).
 | Belirti                                    | Çözüm                                                                |
 | :----------------------------------------- | :------------------------------------------------------------------- |
 | `bcrypt` hatası                            | `passlib` 1.7.4 + `bcrypt` 4.0.1 sabitlenmiş, requirements'tan emin olun |
-| `extension "vector" does not exist`        | `pgvector/pgvector:pg16` imajının çalıştığını doğrulayın; eski `postgres:16-alpine` volume'unu silin (`docker compose down -v`) |
+| Backend `connection refused` Chroma        | İlk açılışta Chroma yavaş başlar → 5–10 sn bekleyin / yeniden deneyin |
 | Migration "table already exists"           | `docker compose down -v` ile volume'ları temizleyin                  |
 | `OPENAI_API_KEY` boş → 500                 | `.env`'e geçerli anahtar koyup container'ı yeniden başlatın          |
 | İlk ingest çok yavaş                       | İlk çağrıda BGE-M3 (~2.3 GB) indirilir; `hf_cache` volume'u sayesinde sonrakiler anlık |
 | BGE-M3 belleği aşıyor                      | `.env`'de `EMBEDDING_PROVIDER=openai` veya küçük bir alternatif (`intfloat/multilingual-e5-small`) deneyin |
 | GPU kullanmak                              | `.env`'de `EMBEDDING_DEVICE=cuda`; Dockerfile'ı CUDA torch wheel ile yeniden build edin (`TORCH_INDEX_URL`) |
-| Embedding boyutu değişti (model swap)      | pgvector koleksiyonunu sıfırlayın: `docker compose down -v` ya da Postgres'te `langchain_pg_*` tablolarını drop edin |
 
 ## Yol Haritası
 İş paketleri için bkz. [`docs/work-packages.md`](docs/work-packages.md).

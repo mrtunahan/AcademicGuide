@@ -12,8 +12,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://academicguide:change_me@postgres:5432/academicguide"
 
-    # pgvector collection name (logical namespace inside langchain_pg_collection)
-    vector_collection: str = "tubitak_2209"
+    chroma_host: str = "chroma"
+    chroma_port: int = 8000
+    chroma_collection: str = "tubitak_2209"
 
     openai_api_key: str | None = None
     llm_model: str = "gpt-4o-mini"
