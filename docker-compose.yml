@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: postgres:16-alpine
     container_name: academicguide-postgres
     restart: unless-stopped
     environment:
@@ -17,6 +17,15 @@ services:
       timeout: 5s
       retries: 5
 
+  chroma:
+    image: chromadb/chroma:0.5.20
+    container_name: academicguide-chroma
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
   backend:
     build:
       context: ./backend
@@ -26,6 +35,8 @@ services:
     env_file:
       - .env
     environment:
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       HF_HOME: /app/data/hf
@@ -35,6 +46,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      chroma:
+        condition: service_started
     volumes:
       - ./backend:/app
       - backend_data:/app/data
@@ -58,5 +71,6 @@ services:
 
 volumes:
   postgres_data:
+  chroma_data:
   backend_data:
   hf_cache:

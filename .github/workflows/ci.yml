@@ -67,7 +67,7 @@ jobs:
           sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgresql+psycopg://academicguide:ci_secret@postgres:5432/academicguide|' .env
 
       - name: Start stack
-        run: docker compose up -d --build postgres backend frontend
+        run: docker compose up -d --build postgres chroma backend frontend
 
       - name: Wait for backend
         run: |

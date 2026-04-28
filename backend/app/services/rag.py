@@ -1,10 +1,11 @@
 from functools import lru_cache
 from typing import Any
 
+import chromadb
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_openai import ChatOpenAI
-from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import Settings, get_settings
@@ -43,14 +44,16 @@ def _build_embeddings(settings: Settings) -> Embeddings:
 class RAGService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.collection_name = settings.vector_collection
+        self.collection_name = settings.chroma_collection
         self._embeddings = _build_embeddings(settings)
-        self._vectorstore = PGVector(
-            embeddings=self._embeddings,
+        self._client = chromadb.HttpClient(
+            host=settings.chroma_host,
+            port=settings.chroma_port,
+        )
+        self._vectorstore = Chroma(
+            client=self._client,
             collection_name=self.collection_name,
-            connection=settings.database_url,
-            use_jsonb=True,
-            create_extension=False,  # extension is created by alembic migration 0003
+            embedding_function=self._embeddings,
         )
         self._splitter = RecursiveCharacterTextSplitter(
             chunk_size=800,
